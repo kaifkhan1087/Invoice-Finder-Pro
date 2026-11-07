@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Finder Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Monochrome Glassmorphism & Micro Effects */
+  .glass-panel {
+    background: rgba(12, 12, 12, 0.75);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.065);
+    box-shadow: 0 14px 36px -8px rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-card.dragging {
+    opacity: 0.35;
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.7);
+    transform: scale(0.99);
+  }
+
+  .glass-input {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  }
+
+  .glass-input:focus {
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(255, 255, 255, 0.15);
+  }
+
+  .glass-btn-primary {
+    background: #ffffff;
+    color: #000000;
+    font-weight: 700;
+    border: 1px solid #ffffff;
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+  }
+
+  .glass-btn-primary:hover:not(:disabled) {
+    background: #e4e4e7;
+    border-color: #e4e4e7;
+    box-shadow: 0 6px 24px rgba(255, 255, 255, 0.35);
+    transform: translateY(-1px);
+  }
+
+  .glass-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .glass-btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: #f4f4f5;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    transition: all 0.2s ease;
+  }
+
+  .glass-btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .glass-chip-active {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 2px 10px rgba(255, 255, 255, 0.15);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Custom Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+</style>
+</head>
+<body class="bg-[#030303] text-slate-100 min-h-screen relative overflow-x-hidden selection:bg-white selection:text-black">
+
+  <!-- Ambient Monochrome Radial Light Gradients -->
+  <div class="fixed top-0 left-1/4 w-[32rem] h-[32rem] bg-white/[0.04] rounded-full blur-[150px] pointer-events-none animate-pulse"></div>
+  <div class="fixed top-1/3 right-1/4 w-[28rem] h-[28rem] bg-white/[0.03] rounded-full blur-[140px] pointer-events-none"></div>
+
+  <div class="max-w-5xl mx-auto px-4 py-8 sm:py-12 relative z-10">
+    
+    <!-- Header -->
+    <header class="text-center mb-10">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-btn-secondary text-xs font-semibold text-slate-300 mb-4 tracking-wider uppercase border border-white/20 shadow-lg">
+        <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+        Monochrome Performance Suite
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-gradient mb-3">
+        Invoice Finder Pro
+      </h1>
+      <p class="text-slate-400 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
+        Locate, filter, reorder, export ZIP, and merge PDF invoices instantly with local browser acceleration.
+      </p>
+    </header>
+
+    <!-- Main Control Panel -->
+    <section class="glass-panel rounded-3xl p-6 sm:p-8 mb-8 relative overflow-hidden">
+      <!-- Glow Accent -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-white/[0.05] rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Action Buttons Row -->
+      <div class="flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex flex-wrap gap-3">
+          <label class="glass-btn-primary cursor-pointer px-5 py-3 rounded-xl font-bold text-sm flex items-center gap-2.5">
+            <svg class="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+            </svg>
+            <span>Select Folder</span>
+            <input id="folderPicker" type="file" accept="application/pdf,.pdf" webkitdirectory multiple class="hidden">
+          </label>
+
+          <label class="glass-btn-secondary cursor-pointer px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2.5 text-slate-200">
+            <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <span>Select PDF Files</span>
+            <input id="filePicker" type="file" accept="application/pdf,.pdf" multiple class="hidden">
+          </label>
+        </div>
+
+        <button id="clearBtn" type="button" class="glass-btn-secondary px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-white border-white/10 hover:border-white/30">
+          Clear All (Esc)
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 mt-3 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+        </svg>
+        100% Client-Side Privacy. Documents are parsed directly inside your browser.
+      </p>
+
+      <!-- Search Input Area -->
+      <div class="mt-6">
+        <label for="searchInput" class="block font-semibold text-xs tracking-wider uppercase text-slate-300 mb-2">
+          Target Invoice Numbers / Identifiers
+        </label>
+        <div class="relative">
+          <textarea id="searchInput" rows="4" placeholder="Paste or type invoice numbers (separated by lines, commas, or semicolons)...&#10;e.g.&#10;OD-2627-400&#10;OD-2627-399&#10;OD-2627-395" class="w-full px-4 py-3.5 rounded-2xl glass-input text-slate-100 placeholder-slate-600 text-sm font-mono focus:outline-none transition-all shadow-inner resize-y"></textarea>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">
+          Automatic normalization: Ignores hyphens, spaces, underscores, or casing variations.
+        </p>
+      </div>
+
+      <!-- Stats & Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+        <div class="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div class="p-3 rounded-xl bg-white/10 text-white border border-white/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium uppercase tracking-wider">Loaded PDFs</div>
+            <div id="totalCount" class="text-xl font-extrabold text-white">0</div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div class="p-3 rounded-xl bg-white/10 text-white border border-white/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium uppercase tracking-wider">Matching Invoices</div>
+            <div id="matchCount" class="text-xl font-extrabold text-white">0</div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div class="p-3 rounded-xl bg-white/10 text-white border border-white/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium uppercase tracking-wider">Missing Queries</div>
+            <div id="missingCount" class="text-xl font-extrabold text-white">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pro Tip & Quick Actions -->
+      <div class="mt-6 p-4 rounded-2xl bg-white/[0.04] border border-white/10 text-slate-300 text-xs leading-relaxed flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-white text-base leading-none">💡</span>
+          <span>Shortcut: Press <b>Ctrl/Cmd + Enter</b> to merge, <b>Esc</b> to clear. Drag items to reorder sequence.</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="copyMissingBtn" type="button" class="glass-btn-secondary px-3 py-1.5 rounded-lg text-xs font-semibold hidden">
+            Copy Missing IDs
+          </button>
+          <button id="exportCsvBtn" type="button" class="glass-btn-secondary px-3 py-1.5 rounded-lg text-xs font-semibold">
+            Export CSV Report
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="glass-panel rounded-3xl p-6 sm:p-8 relative">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span>Search Results & Filters</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Filter, drag-to-reorder, merge, or export matched invoices.</p>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex items-center gap-2 border border-white/15 p-1 rounded-xl bg-black/40 text-xs">
+          <button id="filterAll" type="button" class="px-3 py-1.5 rounded-lg font-semibold transition-all glass-chip-active">All</button>
+          <button id="filterFound" type="button" class="px-3 py-1.5 rounded-lg font-semibold transition-all text-slate-400 hover:text-white">Found</button>
+          <button id="filterMissing" type="button" class="px-3 py-1.5 rounded-lg font-semibold transition-all text-slate-400 hover:text-white">Missing</button>
+        </div>
+      </div>
+
+      <!-- Output Toolbar -->
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6 pt-3 border-t border-white/10">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <label for="customFilename" class="text-xs font-semibold text-slate-300 shrink-0">Output Name:</label>
+          <input id="customFilename" type="text" value="Merged_Invoices.pdf" class="px-3 py-1.5 rounded-xl glass-input text-slate-100 text-xs font-mono focus:outline-none w-full sm:w-56">
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <button id="selectAllBtn" type="button" class="glass-btn-secondary px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white">
+            Select All
+          </button>
+          <button id="exportZipBtn" type="button" class="glass-btn-secondary px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            <span>Download ZIP</span>
+          </button>
+          <button id="mergeBtn" type="button" class="glass-btn-primary px-5 py-2 rounded-xl text-xs font-bold text-black flex items-center gap-2">
+            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+            </svg>
+            <span>Merge PDFs</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Status Banner -->
+      <div id="mergeStatus" class="p-3.5 rounded-xl bg-white/10 border border-white/20 text-xs font-semibold text-slate-200 mb-4 hidden" role="status"></div>
+
+      <!-- PDF Results Container -->
+      <div id="results" class="space-y-3">
+        <div class="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">
+          <svg class="w-12 h-12 mx-auto mb-3 text-slate-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+          </svg>
+          Please select an invoice folder or load PDF files to begin searching.
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center mt-12 text-xs text-slate-600 font-mono tracking-wider">
+      INVOICE FINDER PRO &bull; MONOCHROME GLASS EDITION
+    </footer>
+  </div>
+
+<script>
+(() => {
+  const folderPicker = document.getElementById('folderPicker');
+  const filePicker = document.getElementById('filePicker');
+  const searchInput = document.getElementById('searchInput');
+  const results = document.getElementById('results');
+  const totalCount = document.getElementById('totalCount');
+  const matchCount = document.getElementById('matchCount');
+  const missingCount = document.getElementById('missingCount');
+  const mergeStatus = document.getElementById('mergeStatus');
+  const copyMissingBtn = document.getElementById('copyMissingBtn');
+  const customFilename = document.getElementById('customFilename');
+
+  let pdfs = [];
+  let currentMatches = [];
+  let currentMissing = [];
+  let selectedFiles = new Set();
+  let debounceTimer = null;
+  let activeFilter = 'all'; // 'all', 'found', 'missing'
+  let draggedIndex = null;
+
+  // Pre-load helper for libraries
+  async function loadCDNLibrary(globalName, urls) {
+    if (window[globalName]) return window[globalName];
+    for (const url of urls) {
+      try {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = url;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Failed to load from ' + url));
+          document.head.appendChild(script);
+        });
+        if (window[globalName]) return window[globalName];
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+    throw new Error(`Unable to load library ${globalName}. Please check internet connection.`);
+  }
+
+  function normalize(str) {
+    return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  function loadFiles(fileList) {
+    const incoming = Array.from(fileList || []).filter(f =>
+      f.name.toLowerCase().endsWith('.pdf') || f.type === 'application/pdf'
+    );
+    
+    const seen = new Set();
+    pdfs = [];
+
+    for (let i = 0; i < incoming.length; i++) {
+      const file = incoming[i];
+      const pathKey = (file.webkitRelativePath || file.name).toLowerCase();
+      if (!seen.has(pathKey)) {
+        seen.add(pathKey);
+        pdfs.push({
+          file: file,
+          name: file.name,
+          path: file.webkitRelativePath || file.name,
+          normalized: normalize(file.name)
+        });
+      }
+    }
+
+    totalCount.textContent = pdfs.length;
+    selectedFiles.clear();
+    mergeStatus.classList.add('hidden');
+    mergeStatus.textContent = '';
+    render();
+  }
+
+  function parseQueries() {
+    const rawQuery = searchInput.value;
+    const queryTokens = rawQuery
+      .split(/[\r\n,;]+/)
+      .map(q => q.trim())
+      .filter(Boolean);
+
+    return queryTokens.map(q => ({
+      original: q,
+      normalized: normalize(q)
+    })).filter(q => q.normalized.length > 0);
+  }
+
+  function render() {
+    const queries = parseQueries();
+
+    const matches = [];
+    const missingQueries = [];
+
+    if (queries.length) {
+      queries.forEach(q => {
+        const found = pdfs.filter(item => item.normalized.includes(q.normalized));
+        if (found.length) {
+          found.forEach(item => {
+            if (!matches.some(m => m.file === item.file)) {
+              matches.push(item);
+            }
+          });
+        } else {
+          missingQueries.push(q.original);
+        }
+      });
+    }
+
+    // Preserve custom drag-and-drop order if available
+    if (currentMatches.length && matches.length) {
+      const matchFileSet = new Set(matches.map(m => m.file));
+      const preservedMatches = currentMatches.filter(m => matchFileSet.has(m.file));
+      matches.forEach(m => {
+        if (!preservedMatches.some(pm => pm.file === m.file)) {
+          preservedMatches.push(m);
+        }
+      });
+      currentMatches = preservedMatches;
+    } else {
+      currentMatches = matches;
+    }
+
+    currentMissing = missingQueries;
+    matchCount.textContent = currentMatches.length;
+    missingCount.textContent = currentMissing.length;
+
+    if (currentMissing.length) {
+      copyMissingBtn.classList.remove('hidden');
+    } else {
+      copyMissingBtn.classList.add('hidden');
+    }
+
+    // Auto select all matched files when new matches arrive
+    if (selectedFiles.size === 0 && currentMatches.length) {
+      selectedFiles = new Set(currentMatches.map(m => m.file));
+    }
+
+    if (!pdfs.length) {
+      results.innerHTML = `
+        <div class="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">
+          <svg class="w-12 h-12 mx-auto mb-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+          </svg>
+          Please select an invoice folder or load PDF files to begin.
+        </div>`;
+      return;
+    }
+
+    if (!queries.length) {
+      results.innerHTML = `
+        <div class="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">
+          <svg class="w-12 h-12 mx-auto mb-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          All ${pdfs.length} PDFs loaded. Enter invoice numbers above to filter matching documents.
+        </div>`;
+      return;
+    }
+
+    results.replaceChildren();
+    const fragment = document.createDocumentFragment();
+
+    // Render Missing Queries in missing or all tab
+    if ((activeFilter === 'all' || activeFilter === 'missing') && currentMissing.length) {
+      currentMissing.forEach(missingId => {
+        const missingCard = document.createElement('div');
+        missingCard.className = 'glass-card rounded-2xl p-4 border-red-500/30 bg-red-950/10 flex items-center justify-between gap-4 text-xs';
+        missingCard.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="w-2 h-2 rounded-full bg-red-400"></span>
+            <div>
+              <span class="font-semibold text-red-200">Missing Invoice: ${missingId}</span>
+              <div class="text-[11px] text-slate-400">No loaded PDF file matches this query parameter.</div>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded bg-red-500/20 text-red-300 font-mono text-[10px] border border-red-500/30">NOT FOUND</span>
+        `;
+        fragment.appendChild(missingCard);
+      });
+    }
+
+    // Render Found Files in found or all tab
+    if (activeFilter === 'all' || activeFilter === 'found') {
+      if (!currentMatches.length && activeFilter === 'found') {
+        results.innerHTML = `<div class="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">No matching PDFs found.</div>`;
+        return;
+      }
+
+      currentMatches.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'glass-card rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-200 cursor-grab';
+        card.draggable = true;
+        card.dataset.index = index;
+
+        // Drag events
+        card.addEventListener('dragstart', (e) => {
+          draggedIndex = index;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+        });
+
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const targetIndex = parseInt(card.dataset.index, 10);
+          if (draggedIndex !== null && draggedIndex !== targetIndex) {
+            const reordered = [...currentMatches];
+            const [movedItem] = reordered.splice(draggedIndex, 1);
+            reordered.splice(targetIndex, 0, movedItem);
+            currentMatches = reordered;
+            render();
+          }
+        });
+
+        const left = document.createElement('div');
+        left.className = 'flex items-center gap-3.5 min-w-0 w-full sm:w-auto';
+
+        const dragHandle = document.createElement('span');
+        dragHandle.className = 'text-slate-600 hover:text-slate-300 cursor-grab select-none font-bold text-base px-1';
+        dragHandle.innerHTML = '⋮⋮';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'w-5 h-5 rounded border-white/30 bg-black/60 text-white focus:ring-white/40 accent-white cursor-pointer flex-shrink-0';
+        checkbox.checked = selectedFiles.has(item.file);
+        checkbox.setAttribute('aria-label', 'Select ' + item.name);
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) selectedFiles.add(item.file);
+          else selectedFiles.delete(item.file);
+        });
+
+        const info = document.createElement('div');
+        info.className = 'min-w-0 flex-1';
+
+        const name = document.createElement('div');
+        name.className = 'font-semibold text-sm text-slate-100 truncate';
+        name.textContent = item.name;
+
+        const path = document.createElement('div');
+        path.className = 'text-xs text-slate-400 truncate mt-0.5 flex flex-wrap items-center gap-2';
+
+        const matchedQueries = queries
+          .filter(q => item.normalized.includes(q.normalized))
+          .map(q => q.original);
+
+        path.textContent = item.path;
+        if (matchedQueries.length) {
+          const tag = document.createElement('span');
+          tag.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-white border border-white/20';
+          tag.textContent = 'Matched: ' + matchedQueries.join(', ');
+          path.appendChild(tag);
+        }
+
+        info.append(name, path);
+
+        const openBtn = document.createElement('button');
+        openBtn.className = 'glass-btn-secondary text-white hover:bg-white/20 border-white/20 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all w-full sm:w-auto justify-center';
+        openBtn.type = 'button';
+        openBtn.innerHTML = `
+          <span>View PDF</span>
+          <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+          </svg>
+        `;
+        openBtn.addEventListener('click', () => {
+          const url = URL.createObjectURL(item.file);
+          const tab = window.open(url, '_blank');
+          if (!tab) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = item.name;
+            link.click();
+          }
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        });
+
+        left.append(dragHandle, checkbox, info);
+        card.append(left, openBtn);
+        fragment.appendChild(card);
+      });
+    }
+
+    results.appendChild(fragment);
+  }
+
+  function handleInput() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(render, 100);
+  }
+
+  // Filter Chips UI
+  const filterAll = document.getElementById('filterAll');
+  const filterFound = document.getElementById('filterFound');
+  const filterMissing = document.getElementById('filterMissing');
+
+  function setFilter(filterType) {
+    activeFilter = filterType;
+    [filterAll, filterFound, filterMissing].forEach(btn => {
+      btn.classList.remove('glass-chip-active', 'text-white');
+      btn.classList.add('text-slate-400');
+    });
+    if (filterType === 'all') filterAll.classList.add('glass-chip-active', 'text-white');
+    if (filterType === 'found') filterFound.classList.add('glass-chip-active', 'text-white');
+    if (filterType === 'missing') filterMissing.classList.add('glass-chip-active', 'text-white');
+    render();
+  }
+
+  filterAll.addEventListener('click', () => setFilter('all'));
+  filterFound.addEventListener('click', () => setFilter('found'));
+  filterMissing.addEventListener('click', () => setFilter('missing'));
+
+  // Copy Missing IDs
+  copyMissingBtn.addEventListener('click', () => {
+    if (!currentMissing.length) return;
+    const text = currentMissing.join('\n');
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    textarea.remove();
+    mergeStatus.classList.remove('hidden');
+    mergeStatus.textContent = `📋 Copied ${currentMissing.length} missing invoice IDs to clipboard!`;
+    setTimeout(() => mergeStatus.classList.add('hidden'), 4000);
+  });
+
+  // CSV Export Report
+  document.getElementById('exportCsvBtn').addEventListener('click', () => {
+    const queries = parseQueries();
+    if (!queries.length && !pdfs.length) {
+      mergeStatus.classList.remove('hidden');
+      mergeStatus.textContent = '⚠️ Please load files or enter target queries first.';
+      return;
+    }
+
+    let csvContent = 'data:text/csv;charset=utf-8,Status,Query/Invoice Number,Filename,File Path\n';
+    
+    currentMatches.forEach(item => {
+      csvContent += `FOUND,"${item.name}","${item.name}","${item.path}"\n`;
+    });
+
+    currentMissing.forEach(missing => {
+      csvContent += `MISSING,"${missing}","N/A","N/A"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'Invoice_Search_Report.csv');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  });
+
+  // ZIP Download
+  document.getElementById('exportZipBtn').addEventListener('click', async () => {
+    const chosen = currentMatches.filter(item => selectedFiles.has(item.file)).map(item => item.file);
+    if (!chosen.length) {
+      mergeStatus.classList.remove('hidden');
+      mergeStatus.textContent = '⚠️ Select at least one matching PDF to download ZIP.';
+      return;
+    }
+
+    mergeStatus.classList.remove('hidden');
+    mergeStatus.textContent = `⏳ Compressing ${chosen.length} PDFs into ZIP...`;
+
+    try {
+      const JSZipLib = await loadCDNLibrary('JSZip', [
+        'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+        'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'
+      ]);
+
+      const zip = new JSZipLib();
+      for (const file of chosen) {
+        const arrayBuffer = await file.arrayBuffer();
+        zip.file(file.name, arrayBuffer);
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Matched_Invoices.zip';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+      mergeStatus.textContent = `✅ Successfully exported ${chosen.length} PDFs into "Matched_Invoices.zip".`;
+    } catch (err) {
+      mergeStatus.textContent = '❌ ' + err.message;
+    }
+  });
+
+  // Keyboard Shortcuts
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('clearBtn').click();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('mergeBtn').click();
+    }
+  });
+
+  folderPicker.addEventListener('change', e => loadFiles(e.target.files));
+  filePicker.addEventListener('change', e => loadFiles(e.target.files));
+  searchInput.addEventListener('input', handleInput);
+
+  let allSelectedState = true;
+  document.getElementById('selectAllBtn').addEventListener('click', () => {
+    if (allSelectedState) {
+      selectedFiles.clear();
+      allSelectedState = false;
+      document.getElementById('selectAllBtn').textContent = 'Select All';
+    } else {
+      selectedFiles = new Set(currentMatches.map(m => m.file));
+      allSelectedState = true;
+      document.getElementById('selectAllBtn').textContent = 'Deselect All';
+    }
+    render();
+  });
+
+  document.getElementById('mergeBtn').addEventListener('click', async () => {
+    const chosen = currentMatches.filter(item => selectedFiles.has(item.file)).map(item => item.file);
+    if (!chosen.length) {
+      mergeStatus.classList.remove('hidden');
+      mergeStatus.textContent = '⚠️ Please select at least one PDF to merge.';
+      return;
+    }
+
+    const button = document.getElementById('mergeBtn');
+    button.disabled = true;
+    button.innerHTML = `
+      <svg class="w-4 h-4 animate-spin text-black" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span>Merging...</span>
+    `;
+
+    mergeStatus.classList.remove('hidden');
+    mergeStatus.textContent = `⏳ Combining ${chosen.length} PDF files...`;
+
+    try {
+      const PDFLibLib = await loadCDNLibrary('PDFLib', [
+        'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js'
+      ]);
+
+      const mergedPdf = await PDFLibLib.PDFDocument.create();
+      for (const file of chosen) {
+        const bytes = await file.arrayBuffer();
+        const sourcePdf = await PDFLibLib.PDFDocument.load(bytes);
+        const pages = await mergedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
+        pages.forEach(page => mergedPdf.addPage(page));
+      }
+
+      const mergedBytes = await mergedPdf.save();
+      const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      let nameOut = customFilename.value.trim() || 'Merged_Invoices.pdf';
+      if (!nameOut.toLowerCase().endsWith('.pdf')) nameOut += '.pdf';
+      link.download = nameOut;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+      mergeStatus.textContent = `✅ Success! Downloaded "${nameOut}" containing ${chosen.length} merged documents.`;
+    } catch (error) {
+      mergeStatus.textContent = '❌ ' + (error && error.message ? error.message : 'Failed to merge PDFs.');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = `
+        <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+        </svg>
+        <span>Merge PDFs</span>
+      `;
+    }
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    pdfs = [];
+    currentMatches = [];
+    currentMissing = [];
+    selectedFiles.clear();
+    mergeStatus.classList.add('hidden');
+    mergeStatus.textContent = '';
+    folderPicker.value = '';
+    filePicker.value = '';
+    searchInput.value = '';
+    totalCount.textContent = '0';
+    matchCount.textContent = '0';
+    missingCount.textContent = '0';
+    allSelectedState = true;
+    document.getElementById('selectAllBtn').textContent = 'Select All';
+    render();
+  });
+})();
+</script>
+</body>
+</html>
